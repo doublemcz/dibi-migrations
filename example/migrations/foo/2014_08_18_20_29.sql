@@ -1,0 +1,1 @@
+INSERT INTO users (fullname, password, street, city) VALUES ('name', 'password', 'streeet', 'city');

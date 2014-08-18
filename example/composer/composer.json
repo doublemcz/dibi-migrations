@@ -1,0 +1,13 @@
+{
+    "name": "mail_000/temp",
+    "require": {
+        "dg/dibi": "v2.2.2",
+        "tracy/tracy": "2.2.2"
+    },
+    "authors": [
+        {
+            "name": "Martin Mika",
+            "email": "mail@martinmika.eu"
+        }
+    ]
+}
