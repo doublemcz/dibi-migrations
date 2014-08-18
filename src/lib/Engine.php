@@ -34,7 +34,16 @@ class Engine
 		$this->databaseConnection = $dibiConnection;
 		$this->migrationsDirectory = $migrationsFolder;
 		$this->tempDirectory = $tempDirectory;
-		$this->maintenanceFile = $maintenanceFile;
+		if (!empty($maintenanceFile)) {
+			$this->maintenanceFile = $maintenanceFile;
+			if (substr(pathinfo($maintenanceFile, PATHINFO_BASENAME), 0, 1) !== '@') {
+				throw new \RuntimeException(sprintf('The first letter of maintenance file must be @: %s', $maintenanceFile));
+			}
+
+			if (!is_file($this->getLockFilePath(TRUE)) && !is_file($this->getLockFilePath(FALSE))) {
+				throw new \RuntimeException(sprintf('Maintenance file does not exists: %s', $maintenanceFile));
+			}
+		}
 	}
 
 	public static function handle(DibiConnection $dibiConnection, $migrationsFolder, $tempDirectory)
@@ -59,6 +68,8 @@ class Engine
 		if (!$this->isMigrationNeeded($filesCount)) {
 			return FALSE;
 		}
+
+		sleep(2);
 
 		$this->handleMigrationTable();
 		$databaseData = $this->fetchDatabaseData();
@@ -132,12 +143,7 @@ class Engine
 
 	private function isApplicationLocked()
 	{
-		// Lock application if is not locked
-		if (is_file($this->maintenanceFile)) {
-			return TRUE;
-		}
-
-		return FALSE;
+		return !is_file($this->maintenanceFile);
 	}
 
 	/**
@@ -159,9 +165,11 @@ class Engine
 
 	private function getLockFilePath($isLocked = FALSE)
 	{
-		// TODO is locked
-		return FALSE;
-		///return $isLocked ? (WWW_DIR . '/maintenance.php') : (WWW_DIR . '/@maintenance.php');
+		$basename = pathinfo($this->maintenanceFile, PATHINFO_BASENAME);
+		$dirName = pathinfo($this->maintenanceFile, PATHINFO_DIRNAME);
+		return $isLocked
+			? ($dirName . DIRECTORY_SEPARATOR . $basename)
+			: $this->maintenanceFile;
 	}
 
 	private function migrateFiles($filesToBeMigrated)
