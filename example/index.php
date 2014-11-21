@@ -1,4 +1,10 @@
 <?php
+define('MAINTENANCE_FILE', __DIR__ . '/@maintenance.php');
+if (FALSE !== file_exists(MAINTENANCE_FILE)) {
+	require MAINTENANCE_FILE;
+	exit;
+}
+
 require __DIR__ . '/composer/vendor/autoload.php';
 require __DIR__ . '/../src/dibi-migrations.php';
 
@@ -14,6 +20,8 @@ $config = array(
 $dibiConnection = new DibiConnection($config);
 $migrationsPath = __DIR__ . '/migrations';
 $tempDirectory = __DIR__ . '/temp';
-$maintenanceFile = __DIR__ . '/@maintenance.php';
-$engine = new doublemcz\DibiMigrations\Engine($dibiConnection, $migrationsPath, $tempDirectory, $maintenanceFile);
+
+$engine = new doublemcz\DibiMigrations\Engine($dibiConnection, $migrationsPath, $tempDirectory, MAINTENANCE_FILE);
 $engine->process();
+
+echo "Migrations has been applied";

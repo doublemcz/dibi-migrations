@@ -1,7 +1,7 @@
 <?php
 namespace doublemcz\DibiMigrations;
 
-use DibiConnection;
+use \DibiConnection;
 
 class Engine
 {

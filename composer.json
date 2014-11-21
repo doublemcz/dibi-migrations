@@ -1,0 +1,18 @@
+{
+	"name": "doublemcz/dibi-migrations",
+	"description": "Simple database migration layer based on dibi",
+	"require": {
+		"dibi/dibi": "*",
+		"php": ">=5.2.0"
+	},
+	"license": "BSD-3-Clause",
+	"authors": [
+		{
+			"name": "Martin Míka",
+			"email": "mail@martinmika.eu"
+		}
+	],
+	"autoload": {
+		"files": ["src/lib/Engine.php"]
+	}
+}
