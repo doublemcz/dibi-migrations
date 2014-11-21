@@ -1,6 +1,6 @@
 <?php
 define('MAINTENANCE_FILE', __DIR__ . '/@maintenance.php');
-if (FALSE !== file_exists(__DIR__ . 'maintenance.php')) {
+if (FALSE !== file_exists(__DIR__ . '/maintenance.php')) {
 	require __DIR__ . '/maintenance.php';
 	exit;
 }
