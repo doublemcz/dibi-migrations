@@ -21,7 +21,7 @@ class Engine
 	 * @param string|null $maintenanceFile
 	 * @throws \RuntimeException
 	 */
-	public function __construct(DibiConnection $dibiConnection, $migrationsFolder, $tempDirectory, $maintenanceFile = NULL)
+	public function __construct(DibiConnection $dibiConnection, $migrationsFolder, $tempDirectory, $maintenanceFile)
 	{
 		if (!is_dir($tempDirectory) && !mkdir($tempDirectory, 0777, TRUE)) {
 			throw new \RuntimeException(sprintf('Cannot create a temp dir: %s', $tempDirectory));
@@ -31,24 +31,29 @@ class Engine
 			throw new \RuntimeException(sprintf('Migration folder does not exists: %s', $migrationsFolder));
 		}
 
+		$this->maintenanceFile = $maintenanceFile;
 		$this->databaseConnection = $dibiConnection;
 		$this->migrationsDirectory = $migrationsFolder;
 		$this->tempDirectory = $tempDirectory;
-		if (!empty($maintenanceFile)) {
-			$this->maintenanceFile = $maintenanceFile;
-			if (substr(pathinfo($maintenanceFile, PATHINFO_BASENAME), 0, 1) !== '@') {
-				throw new \RuntimeException(sprintf('The first letter of maintenance file must be @: %s', $maintenanceFile));
-			}
 
-			if (!is_file($this->getLockFilePath(TRUE)) && !is_file($this->getLockFilePath(FALSE))) {
-				throw new \RuntimeException(sprintf('Maintenance file does not exists: %s', $maintenanceFile));
-			}
+		if (substr(pathinfo($maintenanceFile, PATHINFO_BASENAME), 0, 1) !== '@') {
+			throw new \RuntimeException(sprintf('The first letter of maintenance file must be @: %s', $maintenanceFile));
+		}
+
+		if (!is_file($this->getLockFilePath(TRUE)) && !is_file($this->getLockFilePath(FALSE))) {
+			throw new \RuntimeException(sprintf('Maintenance file does not exists: %s', $maintenanceFile));
 		}
 	}
 
-	public static function handle(DibiConnection $dibiConnection, $migrationsFolder, $tempDirectory)
+	/**
+	 * @param DibiConnection $dibiConnection
+	 * @param string $migrationsFolder
+	 * @param string $tempDirectory
+	 * @param string $maintenanceFile
+	 */
+	public static function handle(DibiConnection $dibiConnection, $migrationsFolder, $tempDirectory, $maintenanceFile)
 	{
-		$instance = new self($dibiConnection, $migrationsFolder, $tempDirectory);
+		$instance = new self($dibiConnection, $migrationsFolder, $tempDirectory, $maintenanceFile);
 		$instance->process();
 	}
 
@@ -128,7 +133,7 @@ class Engine
 	 */
 	private function isApplicationLocked()
 	{
-		return !is_file($this->maintenanceFile);
+		return !is_null($this->maintenanceFile) && !is_file($this->maintenanceFile);
 	}
 
 	/**
@@ -143,11 +148,18 @@ class Engine
 		}
 	}
 
+	/**
+	 * Removes the symlink or copy of lock file
+	 */
 	private function unlockApplication()
 	{
 		unlink($this->getLockFilePath(TRUE));
 	}
 
+	/**
+	 * @param bool $isLocked
+	 * @return null|string
+	 */
 	private function getLockFilePath($isLocked = FALSE)
 	{
 		$basename = pathinfo($this->maintenanceFile, PATHINFO_BASENAME);
@@ -157,6 +169,10 @@ class Engine
 			: $this->maintenanceFile;
 	}
 
+	/**
+	 * @param array $filesToBeMigrated
+	 * @throws \Exception
+	 */
 	private function migrateFiles($filesToBeMigrated)
 	{
 		if ($this->isApplicationLocked()) {
