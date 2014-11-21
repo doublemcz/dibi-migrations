@@ -1,7 +1,7 @@
 <?php
 namespace doublemcz\DibiMigrations;
 
-use DibiConnection;
+use \DibiConnection;
 
 class Engine
 {
@@ -57,36 +57,29 @@ class Engine
 	 */
 	public function process()
 	{
-		if ($this->isApplicationLocked()) {
+		if ($this->isApplicationLocked() || !$this->isMigrationNeeded()) {
 			return FALSE;
 		}
 
-		$folder = $this->getMigrationFolder();
-		$availableFiles = $this->getAvailableFiles($folder);
-		$filesCount = count($availableFiles);
-
-		if (!$this->isMigrationNeeded($filesCount)) {
-			return FALSE;
-		}
-
-		sleep(2);
-
+		$this->lockApplication();
 		$this->handleMigrationTable();
-		$databaseData = $this->fetchDatabaseData();
-		$filesToBeMigrated = $this->getNonMigratedFiles($databaseData, $availableFiles);
+		$filesToBeMigrated = $this->getNonMigratedFiles();
 		// Order by date to get right migration order
 		usort($filesToBeMigrated, array($this, 'sortFiles'));
 		if (!empty($filesToBeMigrated)) {
 			$this->migrateFiles($filesToBeMigrated);
 		}
 
-		$this->setTemporaryFileContent($filesCount);
+		$this->setTemporaryFileContent(disk_total_space($this->migrationsDirectory));
 
 		return TRUE;
 	}
 
-	private function getNonMigratedFiles($databaseData, $availableFiles)
+	private function getNonMigratedFiles()
 	{
+		$availableFiles = $this->getAvailableFiles($this->migrationsDirectory);
+		$databaseData = $this->fetchDatabaseData();
+
 		if (!$databaseData) {
 			return $availableFiles;
 		}
@@ -119,28 +112,20 @@ class Engine
 	}
 
 	/**
-	 * @param int $countOfUserFiles
 	 * @return bool
-	 * @throws \RuntimeException
 	 */
-	private function isMigrationNeeded($countOfUserFiles)
+	private function isMigrationNeeded()
 	{
 		if (!file_exists($this->getTemporaryDataFile())) {
 			return TRUE;
 		}
 
-		$lastMigrationCount = $this->getCountInTemporaryFile();
-		if ($countOfUserFiles < $lastMigrationCount) {
-			throw new \RuntimeException('Count in temp data file is higher than real migration files. A programmer removed one or more migration files.');
-		}
-
-		if ($lastMigrationCount < $countOfUserFiles) {
-			return TRUE;
-		}
-
-		return FALSE;
+		return $this->getCountInTemporaryFile() < disk_total_space($this->migrationsDirectory);
 	}
 
+	/**
+	 * @return bool
+	 */
 	private function isApplicationLocked()
 	{
 		return !is_file($this->maintenanceFile);
@@ -168,7 +153,7 @@ class Engine
 		$basename = pathinfo($this->maintenanceFile, PATHINFO_BASENAME);
 		$dirName = pathinfo($this->maintenanceFile, PATHINFO_DIRNAME);
 		return $isLocked
-			? ($dirName . DIRECTORY_SEPARATOR . $basename)
+			? ($dirName . DIRECTORY_SEPARATOR . substr($basename, 1))
 			: $this->maintenanceFile;
 	}
 
