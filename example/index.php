@@ -19,7 +19,7 @@ $dibiConnection = new DibiConnection($config);
 $migrationsPath = __DIR__ . '/migrations';
 $tempDirectory = __DIR__ . '/temp';
 
-$engine = new doublemcz\DibiMigrations\Engine($dibiConnection, $migrationsPath, $tempDirectory, MAINTENANCE_FILE);
+$engine = new doublemcz\DibiMigrations\Engine($dibiConnection, $migrationsPath, $tempDirectory);
 $engine->process();
 
 echo "Migrations has been applied";
