@@ -46,30 +46,42 @@ class Engine
 
 	/**
 	 * @throws \Exception
+	 * @return void
 	 */
 	public function process()
 	{
-		if ($this->isApplicationLocked() || !$this->isMigrationNeeded()) {
-			return FALSE;
+		if ($this->isApplicationLocked()) {
+			return;
+		}
+
+		$availableFiles = $this->getAvailableFiles($this->migrationsDirectory);
+		if (!$this->isMigrationNeeded(count($availableFiles))) {
+			return;
+		}
+
+		// Again ask for if locked. If migrations are used on every page load than
+		// the counting of files can be long
+		if ($this->isApplicationLocked()) {
+			return;
 		}
 
 		$this->lockApplication();
 		$this->handleMigrationTable();
-		$filesToBeMigrated = $this->getNonMigratedFiles();
+		$filesToBeMigrated = $this->getNonMigratedFiles($availableFiles);
 		// Order by date to get right migration order
 		usort($filesToBeMigrated, array($this, 'sortFiles'));
 		if (!empty($filesToBeMigrated)) {
 			$this->migrateFiles($filesToBeMigrated);
 		}
 
-		$this->setTemporaryFileContent(disk_total_space($this->migrationsDirectory));
+		$this->setTemporaryFileContent(count($availableFiles));
+		$this->unlockApplication();
 
-		return TRUE;
+		return;
 	}
 
-	private function getNonMigratedFiles()
+	private function getNonMigratedFiles($availableFiles)
 	{
-		$availableFiles = $this->getAvailableFiles($this->migrationsDirectory);
 		$databaseData = $this->fetchDatabaseData();
 
 		if (!$databaseData) {
@@ -104,15 +116,16 @@ class Engine
 	}
 
 	/**
+	 * @param int $filesOnFileSystem
 	 * @return bool
 	 */
-	private function isMigrationNeeded()
+	private function isMigrationNeeded($filesOnFileSystem)
 	{
-		if (!file_exists($this->getTemporaryDataFile())) {
+		if ($filesOnFileSystem > 0 && !file_exists($this->getTemporaryDataFile())) {
 			return TRUE;
 		}
 
-		return $this->getCountInTemporaryFile() < disk_total_space($this->migrationsDirectory);
+		return $this->getCountInTemporaryFile() < $filesOnFileSystem;
 	}
 
 	/**
@@ -120,7 +133,7 @@ class Engine
 	 */
 	private function isApplicationLocked()
 	{
-		return FALSE !== file_exists($this->getLockFilePath());
+		return TRUE === file_exists($this->getLockFilePath());
 	}
 
 	/**
@@ -147,12 +160,6 @@ class Engine
 	 */
 	private function migrateFiles($filesToBeMigrated)
 	{
-		if ($this->isApplicationLocked()) {
-			return FALSE;
-		}
-
-		$this->lockApplication();
-
 		foreach ($filesToBeMigrated as $file) {
 			$filename = $file['file'] . '.sql';
 			$filePath = $this->getMigrationFolder() . '/' . $file['user'] . '/' . $filename;
@@ -163,8 +170,6 @@ class Engine
 				throw new \Exception(sprintf('The migration file %s does not exist.', $filePath));
 			}
 		}
-
-		$this->unlockApplication();
 	}
 
 	/**
@@ -284,7 +289,7 @@ class Engine
 	 */
 	private function getTemporaryDataFile()
 	{
-		return $this->tempDirectory . '/migrations.dat';
+		return $this->tempDirectory . '/db-migrations.dat';
 	}
 
 	/**
