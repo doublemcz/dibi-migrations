@@ -15,10 +15,10 @@ The Second parameter is migrations dir. Migrations folder consist of identificat
 The structure of migration dir should looks as follows:
 ```
  app =>
-  martinm =>
+  doublem =>
     2014_12_24_18_00.sql
     2014_12_31_23_00.sql
-  pavelp =>
+  foglcz =>
     2015_01_01_17_05.sql
 ```
 
