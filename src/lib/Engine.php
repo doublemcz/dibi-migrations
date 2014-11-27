@@ -11,17 +11,14 @@ class Engine
 	private $databaseVersionTable = '_database_version';
 	/** @var string */
 	private $migrationsDirectory;
-	/** @var string|null */
-	private $maintenanceFile = NULL;
 
 	/**
 	 * @param DibiConnection $dibiConnection
 	 * @param string $migrationsFolder
 	 * @param string $tempDirectory
-	 * @param string|null $maintenanceFile
 	 * @throws \RuntimeException
 	 */
-	public function __construct(DibiConnection $dibiConnection, $migrationsFolder, $tempDirectory, $maintenanceFile)
+	public function __construct(DibiConnection $dibiConnection, $migrationsFolder, $tempDirectory)
 	{
 		if (!is_dir($tempDirectory) && !mkdir($tempDirectory, 0777, TRUE)) {
 			throw new \RuntimeException(sprintf('Cannot create a temp dir: %s', $tempDirectory));
@@ -31,29 +28,19 @@ class Engine
 			throw new \RuntimeException(sprintf('Migration folder does not exists: %s', $migrationsFolder));
 		}
 
-		$this->maintenanceFile = $maintenanceFile;
 		$this->databaseConnection = $dibiConnection;
 		$this->migrationsDirectory = $migrationsFolder;
 		$this->tempDirectory = $tempDirectory;
-
-		if (substr(pathinfo($maintenanceFile, PATHINFO_BASENAME), 0, 1) !== '@') {
-			throw new \RuntimeException(sprintf('The first letter of maintenance file must be @: %s', $maintenanceFile));
-		}
-
-		if (!is_file($this->getLockFilePath(TRUE)) && !is_file($this->getLockFilePath(FALSE))) {
-			throw new \RuntimeException(sprintf('Maintenance file does not exists: %s', $maintenanceFile));
-		}
 	}
 
 	/**
 	 * @param DibiConnection $dibiConnection
 	 * @param string $migrationsFolder
 	 * @param string $tempDirectory
-	 * @param string $maintenanceFile
 	 */
-	public static function handle(DibiConnection $dibiConnection, $migrationsFolder, $tempDirectory, $maintenanceFile)
+	public static function handle(DibiConnection $dibiConnection, $migrationsFolder, $tempDirectory)
 	{
-		$instance = new self($dibiConnection, $migrationsFolder, $tempDirectory, $maintenanceFile);
+		$instance = new self($dibiConnection, $migrationsFolder, $tempDirectory);
 		$instance->process();
 	}
 
@@ -133,40 +120,25 @@ class Engine
 	 */
 	private function isApplicationLocked()
 	{
-		return !is_null($this->maintenanceFile) && !is_file($this->maintenanceFile);
+		return FALSE !== file_exists($this->getLockFilePath());
 	}
 
 	/**
-	 * On windows we have to copy the file. On linux we can create symlink - it is faster and more secure
+	 * Create a file in temp directory
 	 */
 	private function lockApplication()
 	{
-		if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-			copy($this->getLockFilePath(), $this->getLockFilePath(TRUE));
-		} else {
-			symlink($this->getLockFilePath(), $this->getLockFilePath(TRUE));
+		if (FALSE === touch($this->getLockFilePath())) {
+			throw new \RuntimeException('Cannot lock application for database migration');
 		}
 	}
 
 	/**
-	 * Removes the symlink or copy of lock file
+	 * Removes the file in temp directory
 	 */
 	private function unlockApplication()
 	{
-		unlink($this->getLockFilePath(TRUE));
-	}
-
-	/**
-	 * @param bool $isLocked
-	 * @return null|string
-	 */
-	private function getLockFilePath($isLocked = FALSE)
-	{
-		$basename = pathinfo($this->maintenanceFile, PATHINFO_BASENAME);
-		$dirName = pathinfo($this->maintenanceFile, PATHINFO_DIRNAME);
-		return $isLocked
-			? ($dirName . DIRECTORY_SEPARATOR . substr($basename, 1))
-			: $this->maintenanceFile;
+		unlink($this->getLockFilePath());
 	}
 
 	/**
@@ -321,5 +293,13 @@ class Engine
 	private function getMigrationFolder()
 	{
 		return $this->migrationsDirectory;
+	}
+
+	/**
+	 * @return string
+	 */
+	private function getLockFilePath()
+	{
+		return $this->tempDirectory . '/db-migration.lock';
 	}
 }
