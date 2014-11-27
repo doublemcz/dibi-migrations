@@ -1,15 +1,18 @@
 # Dibi Migrations
 You can install this over composer
 
+#### Installation
 ```
 composer require doublemcz/dibi-migrations
 ```
 
+#### Initialization
 In your migrate script or bootstrap include following code
 ```
 \doublemcz\DibiMigrations\Engine::handle($dibiConnection, $migrationsDir, $tempDir);
 ```
 
+#### Creating migrations
 The First parameter is DibiConnection instance. It is obvious what it does :)
 The Second parameter is migrations dir. Migrations folder consist of identificators of people who develop new code. You must use something unique for each developer.
 The structure of migration dir should looks as follows:
@@ -22,7 +25,7 @@ The structure of migration dir should looks as follows:
     2015_01_01_17_05.sql
 ```
 
-You can see two migrations from user martinm. The first one was created at 18:00 on 24.12.2014. Another user pavelp created migration on 1.1.2015 at 17:05.
+You can see two migrations from user **doublem**. The first one was created at 18:00 on 24.12.2014. Another user **foglcz** created migration on 1.1.2015 at 17:05.
 
 It is really necessary to keep valid dates because if you do a deploy into production the Engine sorts the migrations and deploy them in a row in right order.
 
