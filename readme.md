@@ -7,11 +7,7 @@ composer require doublemcz/dibi-migrations
 
 In your migrate script or bootstrap include following code
 ```
-\doublemcz\DibiMigrations\Engine::handle(
-  $dibiConnection,
-  $migrationsDir,
-  $tempDir
-);
+\doublemcz\DibiMigrations\Engine::handle($dibiConnection, $migrationsDir, $tempDir);
 ```
 
 The First parameter is DibiConnection instance. It is obvious what it does :)
