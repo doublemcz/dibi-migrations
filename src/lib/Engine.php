@@ -1,5 +1,5 @@
 <?php
-namespace doublemcz\DibiMigrations;
+namespace Doublemcz\DibiMigrations;
 
 use \DibiConnection;
 
@@ -289,7 +289,7 @@ class Engine
 	 */
 	private function getTemporaryDataFile()
 	{
-		return $this->tempDirectory . '/db-migrations.dat';
+		return $this->tempDirectory . '/db-migration.dat';
 	}
 
 	/**
