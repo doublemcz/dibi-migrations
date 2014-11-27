@@ -1,11 +1,9 @@
 <?php
-define('MAINTENANCE_FILE', __DIR__ . '/@maintenance.php');
-if (FALSE !== file_exists(__DIR__ . '/maintenance.php')) {
-	require __DIR__ . '/maintenance.php';
-	exit;
+if (!is_file(__DIR__ . '/vendor/autoload.php')) {
+	die("You need to run composer install!");
 }
 
-require __DIR__ . '/composer/vendor/autoload.php';
+require __DIR__ . '/vendor/autoload.php';
 require __DIR__ . '/../src/dibi-migrations.php';
 
 Tracy\Debugger::enable();
