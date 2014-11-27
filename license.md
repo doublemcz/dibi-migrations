@@ -1,7 +1,7 @@
 New BSD License
 ---------------
 
-Copyright (c) 2004, 2014 Martin Míka (http://martinmika.eu)
+Copyright (c) 2014 Martin Míka (http://martinmika.eu)
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
