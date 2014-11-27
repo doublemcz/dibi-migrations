@@ -1,5 +1,5 @@
 # Dibi Migrations
-You can install this over composer
+Dibi migrations can be installed over [composer](https://getcomposer.org/download/).
 
 #### Installation
 ```
