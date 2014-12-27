@@ -36,7 +36,8 @@ class DibiMigrationsNetteExtension22 extends Nette\DI\CompilerExtension
 			);
 
 		if ($config['runAutomatically']) {
-			$service->addSetup('process');
+			$service->addSetup('process')
+				->addTag('run');
 		}
 	}
 
