@@ -1,4 +1,4 @@
-# Dibi Migrations
+# Dibi Migrations - DEPRECATED
 Dibi migrations can be installed over [composer](https://getcomposer.org/download/).
 
 #### Installation
